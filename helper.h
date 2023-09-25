@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
+#include <malloc.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -19,7 +20,7 @@
 using float64_t = double;
 
 // This is 1G
-const size_t FILE_SIZE = 1 << 30; // This is 1G
+const size_t FILE_SIZE = 1 << 30;  // This is 1G
 const float64_t MICROSECONDS_PER_SECOND = 1'000'000;
 
 // For part 1
@@ -45,7 +46,7 @@ void load_file_to_cache(const char* file_name) {
 
     int fd = open(file_name, O_RDONLY);
     if (fd == -1) {
-        handle_error("read");
+        handle_error("open");
     }
 
     for (size_t offset = 0; offset < FILE_SIZE; offset += IO_SIZE) {
@@ -55,6 +56,10 @@ void load_file_to_cache(const char* file_name) {
         if (read(fd, buf, IO_SIZE) == -1) {
             handle_error("read");
         }
+    }
+
+    if (close(fd) == -1) {
+        handle_error("close");
     }
 
     // check output of fincore
@@ -90,6 +95,7 @@ std::pair<float64_t, float64_t> get_stats(std::vector<float64_t> samples) {
     float64_t variance = std::accumulate(samples.begin(), samples.end(), static_cast<float64_t>(0),
                                          [&mu](float64_t accum, float64_t elem) {
                                              return accum + (elem - mu) * (elem - mu);
-                                         }) / n;
+                                         }) /
+                         n;
     return std::make_pair(mu, std::sqrt(variance));
 }

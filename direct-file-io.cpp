@@ -38,9 +38,9 @@ int64_t experiment(const char* file_name, std::vector<size_t> write_positions, b
     }
 
     // allocate buf
-    char* buf = (char*)malloc(IO_SIZE);
+    char* buf = (char*)memalign(IO_SIZE, IO_SIZE);
     if (buf == NULL) {
-        handle_error("malloc");
+        handle_error("memalign");
     }
 
     do_file_io(fd, buf, write_positions, is_read);
