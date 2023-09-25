@@ -55,6 +55,12 @@ int64_t experiment(const char* file_name, std::vector<size_t> write_positions, b
 }
 
 int main(int argc, char** argv) {
+    // bind process to one cpu; see https://stackoverflow.com/questions/8326427/how-to-force-a-c-program-to-run-on-a-particular-core
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    CPU_SET(0, &set);
+    sched_setaffinity(0, sizeof(cpu_set_t), &set);
+
     int iterations = 1;
     bool is_read = true;
     bool is_random_position = false;
@@ -88,6 +94,8 @@ int main(int argc, char** argv) {
             }
         }
     }
+
+    load_file_to_cache(file_name.c_str()); // load file into cache
 
     std::vector<float64_t> samples;
     for (int it = 0; it < iterations; it++) {

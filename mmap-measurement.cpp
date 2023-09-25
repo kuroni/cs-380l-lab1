@@ -45,6 +45,12 @@ int64_t experiment(const char* file_name, int mmap_flags, std::vector<size_t> pa
 }
 
 int main(int argc, char** argv) {
+    // bind process to one cpu; see https://stackoverflow.com/questions/8326427/how-to-force-a-c-program-to-run-on-a-particular-core
+    cpu_set_t set;
+    CPU_ZERO(&set);
+    CPU_SET(0, &set);
+    sched_setaffinity(0, sizeof(cpu_set_t), &set);
+
     int iterations = 1;
     bool file_backed = true, shared = true;
     std::string file_name; // I won't meddle with char* :|
@@ -77,6 +83,8 @@ int main(int argc, char** argv) {
             }
         }
     }
+
+    load_file_to_cache(file_name.c_str());
 
     // apparently we don't need MAP_FILE, as it's ignored?
     int mmap_flag = (file_backed ? MAP_FILE : MAP_ANONYMOUS) | (shared ? MAP_SHARED : MAP_PRIVATE);
