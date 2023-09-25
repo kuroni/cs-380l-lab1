@@ -47,7 +47,6 @@ int64_t experiment(const char* file_name, int mmap_flags, std::vector<size_t> pa
 int main(int argc, char** argv) {
     int iterations = 1;
     bool file_backed = true, shared = true;
-    bool is_random_position = false;
     std::string file_name; // I won't meddle with char* :|
 
     // handing options here
@@ -57,7 +56,6 @@ int main(int argc, char** argv) {
         static struct option long_options[] = {
             {"file", required_argument, 0, 0},
             {"iter", required_argument, 0, 0},
-            {"rand", no_argument, 0, 0},
             {"anon", no_argument, 0, 0},
             {"priv", no_argument, 0, 0},
             {0, 0, 0, 0}
@@ -72,11 +70,9 @@ int main(int argc, char** argv) {
                     file_name = optarg; break;
                 case 1: // iterations
                     iterations = atoi(optarg); break;
-                case 2: // randomizing positions
-                    is_random_position = true; break;
-                case 3: // anonymous
+                case 2: // anonymous
                     file_backed = false; break;
-                case 4: // private
+                case 3: // private
                     shared = false; break;
             }
         }
@@ -87,7 +83,8 @@ int main(int argc, char** argv) {
 
     std::vector<float64_t> samples;
     for (int it = 0; it < iterations; it++) {
-        std::vector<size_t> page_positions = generate_write_positions(PAGE_SIZE, is_random_position);
+        // we always randomize position for this assignment
+        std::vector<size_t> page_positions = generate_write_positions(PAGE_SIZE, true);
         int64_t elapsed_time = experiment(file_name.c_str(), mmap_flag, page_positions);
         std::clog << "Iteration " << it << ": " << elapsed_time << "μs\n";
         samples.push_back(elapsed_time / MICROSECONDS_PER_SECOND);
