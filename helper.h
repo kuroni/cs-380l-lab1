@@ -3,6 +3,7 @@
 #include <getopt.h>
 #include <malloc.h>
 #include <sys/mman.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -39,38 +40,44 @@ inline void handle_error(const char* msg) {
 
 // Load file into cache
 void load_file_to_cache(const char* file_name) {
-    char* buf = (char*)malloc(IO_SIZE);
-    if (buf == NULL) {
-        handle_error("malloc");
-    }
-
-    int fd = open(file_name, O_RDONLY);
-    if (fd == -1) {
-        handle_error("open");
-    }
-
-    for (size_t offset = 0; offset < FILE_SIZE; offset += IO_SIZE) {
-        if (lseek(fd, offset, SEEK_SET) == -1) {
-            handle_error("lseek");
+    for (int it = 0; it < 5; it++) { // try this for 5 times
+        char* buf = (char*)malloc(IO_SIZE);
+        if (buf == NULL) {
+            handle_error("malloc");
         }
-        if (read(fd, buf, IO_SIZE) == -1) {
-            handle_error("read");
+
+        int fd = open(file_name, O_RDONLY);
+        if (fd == -1) {
+            handle_error("open");
+        }
+
+        for (size_t offset = 0; offset < FILE_SIZE; offset += IO_SIZE) {
+            if (lseek(fd, offset, SEEK_SET) == -1) {
+                handle_error("lseek");
+            }
+            if (read(fd, buf, IO_SIZE) == -1) {
+                handle_error("read");
+            }
+        }
+
+        if (close(fd) == -1) {
+            handle_error("close");
+        }
+
+        // check output of fincore
+        std::string cmd = std::string("fincore ") + file_name + " | awk 'FNR == 2 {print $1}'";
+        FILE* stream = popen(cmd.c_str(), "r");
+        fscanf(stream, "%s", buf);
+        pclose(stream);
+        if (strcmp(buf, "1G") == 0) {
+            // file in cache, return
+            return;
         }
     }
 
-    if (close(fd) == -1) {
-        handle_error("close");
-    }
-
-    // check output of fincore
-    std::string cmd = std::string("fincore ") + file_name + " | awk 'FNR == 2 {print $1}'";
-    FILE* stream = popen(cmd.c_str(), "r");
-    fscanf(stream, "%s", buf);
-    pclose(stream);
-    if (strcmp(buf, "1G") != 0) {
-        std::cerr << "File not in cache\n";
-        exit(EXIT_FAILURE);
-    }
+    // failure here
+    std::cerr << "File not in cache\n";
+    exit(EXIT_FAILURE);
 }
 
 // Return a permutation of writing positions

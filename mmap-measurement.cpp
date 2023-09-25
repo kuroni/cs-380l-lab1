@@ -53,17 +53,19 @@ int main(int argc, char** argv) {
 
     int iterations = 1;
     bool file_backed = true, shared = true;
+    bool verbose = false;
     std::string file_name; // I won't meddle with char* :|
 
     // handing options here
     // courtersy of https://man7.org/linux/man-pages/man3/getopt.3.html
     while (true) {
         int option_index = 0;
-        static struct option long_options[] = {
+        static option long_options[] = {
             {"file", required_argument, 0, 0},
             {"iter", required_argument, 0, 0},
             {"anon", no_argument, 0, 0},
             {"priv", no_argument, 0, 0},
+            {"verbose", no_argument, 0, 0},
             {0, 0, 0, 0}
         };
 
@@ -80,6 +82,8 @@ int main(int argc, char** argv) {
                     file_backed = false; break;
                 case 3: // private
                     shared = false; break;
+                case 4: // verbose
+                    verbose = true; break;
             }
         }
     }
@@ -104,6 +108,22 @@ int main(int argc, char** argv) {
     std::cout << "SD:       " << sd << '\n';
     for (size_t it = 0; it < iterations; it++) {
         std::cout << "Sample " << it << ": " << samples[it] << '\n';
+    }
+
+    if (verbose) {
+        rusage usage;
+        if (getrusage(RUSAGE_SELF, &usage) == -1) {
+            handle_error("getrusage");
+        }
+        std::cout << "User CPU time used:               " << usage.ru_utime.tv_sec << '\n';
+        std::cout << "System CPU time used:             " << usage.ru_stime.tv_sec << '\n';
+        std::cout << "Maximum resident set size:        " << usage.ru_maxrss << '\n';
+        std::cout << "Page reclaims (soft page faults): " << usage.ru_minflt << '\n';
+        std::cout << "Page faults (hard page faults):   " << usage.ru_majflt << '\n';
+        std::cout << "Block input operations:           " << usage.ru_inblock << '\n';
+        std::cout << "Block output operations:          " << usage.ru_oublock << '\n';
+        std::cout << "Voluntary context switches:       " << usage.ru_nvcsw << '\n';
+        std::cout << "Involuntary context switches:     " << usage.ru_nivcsw << '\n';
     }
 
     return EXIT_SUCCESS;
