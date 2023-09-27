@@ -88,7 +88,9 @@ int main(int argc, char** argv) {
         }
     }
 
-    load_file_to_cache(file_name.c_str());
+    if (file_backed) {
+        load_file_to_cache(file_name.c_str());
+    }
 
     // apparently we don't need MAP_FILE, as it's ignored?
     int mmap_flag = (file_backed ? MAP_FILE : MAP_ANONYMOUS) | (shared ? MAP_SHARED : MAP_PRIVATE);

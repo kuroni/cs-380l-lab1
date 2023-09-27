@@ -99,8 +99,6 @@ int main(int argc, char** argv) {
         }
     }
 
-    load_file_to_cache(file_name.c_str()); // load file into cache
-
     std::vector<float64_t> samples;
     for (int it = 0; it < iterations; it++) {
         std::vector<size_t> write_positions = generate_write_positions(IO_SIZE, is_random_position);
